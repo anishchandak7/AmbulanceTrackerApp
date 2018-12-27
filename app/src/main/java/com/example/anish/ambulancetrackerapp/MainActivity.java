@@ -15,6 +15,8 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -63,16 +65,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private PermissionsManager permissionsManager;
     private MapboxMap mapboxMap;
     private Location originallocation;
-    private Button call_btn,exit_btn,recenterbtn;
+    private Button call_btn,exit_btn,recenterbtn,signoutbtn;
     String hospital_name;
     GeoPoint geoPoint;
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
+    private FirebaseAuth auth;
     private CollectionReference hospitalsReference=FirebaseFirestore.getInstance().collection("Hospitals");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, "pk.eyJ1IjoiYW5pc2hjaGFuZGFrNyIsImEiOiJjamo2d3d6cGwyN3poM3FxZ3J1NHJtZ3Z2In0.hEajAQLnnf5-hHx0NMuG_w");
+        auth = FirebaseAuth.getInstance();
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
@@ -80,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         call_btn = (Button) findViewById(R.id.call_ambulance_btn);
         exit_btn = (Button) findViewById(R.id.exit_btn);
         recenterbtn = (Button) findViewById(R.id.recenterbutton);
+        signoutbtn = (Button) findViewById(R.id.signoutbutton);
         Intent intent = getIntent();
         if(intent.hasExtra("hospital_name"))
         {
@@ -105,6 +110,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 setCameraPosition(originallocation);
+            }
+        });
+
+        signoutbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(auth.getCurrentUser()!=null)
+                {
+                    auth.signOut();
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                    finish();
+                }
             }
         });
     }

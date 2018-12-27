@@ -7,9 +7,22 @@
     tools:context=".MainActivity">
 
     <Button
+        android:id="@+id/signoutbutton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="SIGN OUT"
+        mapbox:layout_constraintBottom_toTopOf="@+id/exit_btn"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintHorizontal_bias="0.0"
+        mapbox:layout_constraintStart_toStartOf="parent" />
+
+    <Button
         android:id="@+id/recenterbutton"
-        android:layout_width="74dp"
-        android:layout_height="60dp"
+        android:layout_width="49dp"
+        android:layout_height="46dp"
         android:background="@android:drawable/ic_menu_mylocation"
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
@@ -20,36 +33,40 @@
 
     <Button
         android:id="@+id/exit_btn"
-        android:layout_width="89dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="68dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:text="EXIT"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintTop_toBottomOf="@+id/mapView" />
+        mapbox:layout_constraintHorizontal_bias="0.502"
+        mapbox:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/call_ambulance_btn"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
+        android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:text="CALL"
-        mapbox:layout_constraintEnd_toStartOf="@+id/exit_btn"
-        mapbox:layout_constraintHorizontal_bias="0.145"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toBottomOf="@+id/mapView" />
+        mapbox:layout_constraintBottom_toTopOf="@+id/signoutbutton"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintHorizontal_bias="0.0"
+        mapbox:layout_constraintStart_toStartOf="parent" />
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="50dp"
-        mapbox:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="8dp"
+        mapbox:layout_constraintBottom_toTopOf="@+id/call_ambulance_btn"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintHorizontal_bias="1.0"
+        mapbox:layout_constraintHorizontal_bias="0.0"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toTopOf="parent"
-        mapbox:layout_constraintVertical_bias="0.0"
         mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v11">
 
     </com.mapbox.mapboxsdk.maps.MapView>
