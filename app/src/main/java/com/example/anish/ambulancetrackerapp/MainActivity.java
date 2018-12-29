@@ -10,10 +10,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -48,6 +50,7 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -66,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapboxMap mapboxMap;
     private Location originallocation;
     private Button call_btn,exit_btn,recenterbtn,signoutbtn;
+    private TextView driver_name,driver_number;
     String hospital_name;
     GeoPoint geoPoint;
     private LocationEngine locationEngine;
@@ -85,17 +89,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         exit_btn = (Button) findViewById(R.id.exit_btn);
         recenterbtn = (Button) findViewById(R.id.recenterbutton);
         signoutbtn = (Button) findViewById(R.id.signoutbutton);
+        driver_name = (TextView) findViewById(R.id.driver_name_tv);
+        driver_number = (TextView) findViewById(R.id.driver_number_tv);
         Intent intent = getIntent();
+        //Fetch selected hospital from HospitalListActivity:
         if(intent.hasExtra("hospital_name"))
         {
             hospital_name=intent.getStringExtra("hospital_name");
         }
         if(hospital_name!=null) {
-            hospitalsReference.document(hospital_name).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            //Hospitals(collection)->hospital_name(document)->Ambulances(collection)->Amb1(document)
+            //For multiple ambulances for same hospital apply different logic AFTER collection Ambulances
+
+            //Fetch details from document:
+            hospitalsReference.document(hospital_name).collection("Ambulances").document("Amb1").get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @SuppressLint("NewApi")
                 @Override
                 public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                     DocumentSnapshot documentSnapshot = task.getResult();
-                    geoPoint = documentSnapshot.getGeoPoint("Location");
+                    if(documentSnapshot.get("status").equals("available")) {
+                        geoPoint = (GeoPoint) documentSnapshot.get("location");
+                        driver_name.setText("Driver name : "+(CharSequence) documentSnapshot.get("driver"));
+                        driver_number.setText("License number :"+(CharSequence) documentSnapshot.get("license_number"));
+                        //To implement syncronization between ambulances in order to identify which ambulance of particular
+                        //hospital is busy or available for help use below code as status.
+                        //This whole if-condition is used for this purpose.
+                        //documentSnapshot.getReference().update("status","busy");
+                    }
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -104,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         }
+        //Buttons OnCLickListenners:
         call_btn.setOnClickListener(this);
         exit_btn.setOnClickListener(this);
         recenterbtn.setOnClickListener(new View.OnClickListener() {
@@ -126,6 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    //This method is responsible for finding route if exist between source to destination:
     private void getRoute(Point origin, Point destination)
     {
         NavigationRoute.builder(this)
@@ -173,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
     }
 
+    //Checks status of permissions:
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
