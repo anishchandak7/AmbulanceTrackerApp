@@ -45,6 +45,8 @@ import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+//import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
+import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerOptions;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
@@ -74,12 +76,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     GeoPoint geoPoint;
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
+    //private LocationComponent locationComponent;
     private FirebaseAuth auth;
     private CollectionReference hospitalsReference=FirebaseFirestore.getInstance().collection("Hospitals");
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Mapbox.getInstance(this, "pk.eyJ1IjoiYW5pc2hjaGFuZGFrNyIsImEiOiJjamo2d3d6cGwyN3poM3FxZ3J1NHJtZ3Z2In0.hEajAQLnnf5-hHx0NMuG_w");
+        Mapbox.getInstance(this, "pk.eyJ1IjoicHJvamVjdGFtYnVsYW5jZTkiLCJhIjoiY2pxZjdrbnZkMDBnajQ5cGVkZmJwdml6ZyJ9.nT63fmLzuIPkyuEd-EsuIA");
         auth = FirebaseAuth.getInstance();
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
@@ -130,7 +133,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         recenterbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setCameraPosition(originallocation);
+                @SuppressLint("MissingPermission")
+                Location lastLocation=locationEngine.getLastLocation();
+                if(lastLocation!=null) {
+                    originallocation = lastLocation;
+                    setCameraPosition(originallocation);
+                }else {
+                    locationEngine.addLocationEngineListener(MainActivity.this);
+                }
             }
         });
 
@@ -184,9 +194,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
     }
+    @SuppressLint("MissingPermission")
     @Override
     protected void onStart() {
         super.onStart();
+        if(locationEngine!=null)
+        {
+            locationEngine.activate();
+            locationEngine.requestLocationUpdates();
+        }
+        if(locationLayerPlugin!=null)
+        {
+            locationLayerPlugin.onStart();
+        }
         mapView.onStart();
     }
 
@@ -199,8 +219,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
-            initializeLocationEngine();
-            initializeLocationLayer();
             enableLocationComponent();
         } else {
             Toast.makeText(this, R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show();
@@ -215,35 +233,71 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         addMarker(geoPoint);
     }
 
+
+    @SuppressLint("MissingPermission")
+    private void enableLocationComponent() {
+        // Check if permissions are enabled and if not request
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+            /*LocationComponentOptions options = LocationComponentOptions.builder(this)
+                    .trackingGesturesManagement(true)
+                    .accuracyColor(ContextCompat.getColor(this, R.color.mapbox_blue))
+                    .build();
+            */
+            /*
+            locationComponent = mapboxMap.getLocationComponent();
+            locationComponent.activateLocationComponent(this,options);
+            initializeLocationEngine();
+            locationComponent.setLocationEngine(locationEngine);
+            locationComponent.setLocationComponentEnabled(true);
+            locationComponent.setCameraMode(CameraMode.TRACKING);
+            locationComponent.setRenderMode(RenderMode.NORMAL);
+            originallocation=locationComponent.getLastKnownLocation();
+            setCameraPosition(originallocation);
+            */
+            initializeLocationEngine();
+            initializeLocationLayer();
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
+    }
+
     @SuppressLint("MissingPermission")
 
     private void initializeLocationEngine()
     {
         locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
         locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
+        locationEngine.addLocationEngineListener(this);
         locationEngine.activate();
-
-        Location lastlocation = locationEngine.getLastLocation();
-        if(lastlocation!=null)
-        {
-            originallocation = lastlocation;
-            setCameraPosition(originallocation);
-        }
-        else
-        {
-            locationEngine.addLocationEngineListener(this);
+        Location lastLocation = locationEngine.getLastLocation();
+        if(lastLocation != null){
+            originallocation = lastLocation;
+            setCameraPosition(lastLocation);
         }
     }
+
+    @SuppressLint("MissingPermission")
     private void initializeLocationLayer()
     {
+
+        LocationLayerOptions options1 = LocationLayerOptions.builder(this)
+                .trackingInitialMoveThreshold(1)
+                .accuracyColor(ContextCompat.getColor(this, R.color.mapbox_blue))
+                .build();
         locationLayerPlugin = new LocationLayerPlugin(mapView,mapboxMap,locationEngine);
+        locationLayerPlugin.applyStyle(options1);
+        locationLayerPlugin.setLocationEngine(locationEngine);
         locationLayerPlugin.setLocationLayerEnabled(true);
         locationLayerPlugin.setCameraMode(com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode.TRACKING);
         locationLayerPlugin.setRenderMode(com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode.NORMAL);
+        originallocation=locationLayerPlugin.getLastKnownLocation();
+        setCameraPosition(originallocation);
     }
+
     private void setCameraPosition(Location location)
     {
-        mapboxMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),location.getLongitude()),13.0));
+        mapboxMap.animateCamera(com.mapbox.mapboxsdk.camera.CameraUpdateFactory.newLatLngZoom(new com.mapbox.mapboxsdk.geometry.LatLng(location.getLatitude(),location.getLongitude()),13));
     }
 
     private void addMarker(GeoPoint geoPoint)
@@ -259,38 +313,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             getRoute(originPosition, destinationPosition);
         }
     }
-    @SuppressLint("MissingPermission")
-    private void enableLocationComponent() {
-        // Check if permissions are enabled and if not request
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            LocationComponentOptions options = LocationComponentOptions.builder(this)
-                    .trackingGesturesManagement(true)
-                    .accuracyColor(ContextCompat.getColor(this, R.color.mapbox_blue))
-                    .build();
-
-            // Get an instance of the component
-            LocationComponent locationComponent = mapboxMap.getLocationComponent();
-
-            // Activate
-            locationComponent.activateLocationComponent(this);
-
-            // Enable to make component visible
-            locationComponent.setLocationComponentEnabled(true);
-
-            // Set the component's camera mode
-            locationComponent.setCameraMode(CameraMode.TRACKING);
-
-            // Set the component's render mode
-            locationComponent.setRenderMode(RenderMode.COMPASS);
-
-            originallocation = locationComponent.getLastKnownLocation();
-            setCameraPosition(originallocation);
-        } else {
-            permissionsManager = new PermissionsManager(this);
-            permissionsManager.requestLocationPermissions(this);
-        }
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -311,6 +333,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStop() {
         super.onStop();
+        if(locationEngine!=null)
+        {
+
+            locationEngine.removeLocationUpdates();
+        }
+
+        if(locationLayerPlugin!=null)
+        {
+            locationLayerPlugin.onStop();
+        }
+
         mapView.onStop();
     }
 
@@ -323,6 +356,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(locationEngine!=null)
+        {
+
+            locationEngine.deactivate();
+        }
         mapView.onDestroy();
     }
 

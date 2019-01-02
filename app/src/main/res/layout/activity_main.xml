@@ -16,7 +16,9 @@
         mapbox:layout_constraintHorizontal_bias="0.0"
         mapbox:layout_constraintStart_toStartOf="parent"
         mapbox:layout_constraintTop_toTopOf="parent"
-        mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v11">
+        mapbox:mapbox_styleUrl="mapbox://styles/mapbox/streets-v11"
+        mapbox:layout_optimizationLevel="standard"
+        mapbox:mapbox_cameraZoom="12">
 
     </com.mapbox.mapboxsdk.maps.MapView>
 
